@@ -36,18 +36,32 @@ def retrieve(state: State):
     retrieved_docs = vector_store.similarity_search(state["question"])
     return {"context": retrieved_docs}
 
-# def generate(state: State):
-#     docs_content = "\n\n".join(doc.page_content for doc in state["context"])
-#     messages = prompt.invoke({"question": state["question"], "context": docs_content})
-#     response = llm.invoke(messages)
-#     return {"answer": response.content}
-
 def generate(state: State):
-    docs_content = "\n\n".join(doc.page_content for doc in state["context"])
-    formatted_prompt = f"Given the following context from a document, please answer the question in a concise and informative manner.\n\nContext:\n{docs_content}\n\nQuestion: {state['question']}\n\nAnswer:"
+    # Retrieve the conversation history
+    chat_history = st.session_state.question_history
+    formatted_history = "\n".join(
+        f"User: {q}\nAssistant: {a}" for q, a in chat_history
+    )
     
-    messages = formatted_prompt
-    response = llm.invoke(messages)
+    # Extract document content
+    docs_content = "\n\n".join(doc.page_content for doc in state["context"])
+    
+    # Create a formatted prompt
+    formatted_prompt = (
+        "You are an intelligent assistant helping a user based on their questions and context extracted from documents. "
+        "Here is the conversation so far:\n\n"
+        f"{formatted_history}\n\n"
+        "And here is the relevant context from the document:\n\n"
+        f"{docs_content}\n\n"
+        "Based on the above, answer the user's next question in a concise and informative manner. "
+        "If the user's question is already addressed in the conversation, refer to the prior response without repeating the full answer."
+        "\n\n"
+        f"User's Question: {state['question']}\n\n"
+        "Answer:"
+    )
+    
+    # Invoke the LLM with the prompt
+    response = llm.invoke(formatted_prompt)
     return {"answer": response.content}
 
 # Compile the application state graph
