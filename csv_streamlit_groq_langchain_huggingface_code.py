@@ -108,6 +108,17 @@ if selected_csv != "None":
     vector_store.add_documents(documents=all_splits)
     st.sidebar.success(f"CSV '{selected_csv}' processed and indexed!")
 
+# Delete a CSV
+st.sidebar.write("---")
+delete_csv = st.sidebar.selectbox("Select a CSV to delete:", ["None"] + saved_csvs)
+
+if delete_csv != "None":
+    if st.sidebar.button("Delete Selected CSV"):
+        os.remove(os.path.join(CSV_STORAGE_DIR, delete_csv))
+        st.sidebar.success(f"CSV '{delete_csv}' deleted!")
+        # Refresh the list of CSVs
+        saved_csvs = [f for f in os.listdir(CSV_STORAGE_DIR) if f.endswith(".csv")]
+
 # Q&A Section
 if "question_history" not in st.session_state:
     st.session_state.question_history = []

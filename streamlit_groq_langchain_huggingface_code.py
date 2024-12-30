@@ -9,17 +9,12 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
 from langgraph.graph import START, StateGraph
 from typing_extensions import List, TypedDict
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
-
-# Environment variables setup
-os.environ["LANGCHAIN_TRACING_V2"] = os.getenv('LANGCHAIN_TRACING_V2')
-os.environ["LANGCHAIN_API_KEY"] = os.getenv('LANGCHAIN_API_KEY')
+os.environ["LANGCHAIN_TRACING_V2"] = st.secrets.api_config.LANGCHAIN_TRACING_V2
+os.environ["LANGCHAIN_API_KEY"] = st.secrets.api_config.LANGCHAIN_API_KEY
 
 if not os.environ.get("GROQ_API_KEY"):
-    os.environ["GROQ_API_KEY"] = os.getenv('GROQ_API_KEY')
+    os.environ["GROQ_API_KEY"] = st.secrets.api_config.GROQ_API_KEY
 
 # Initialize LLM and embeddings
 llm = ChatGroq(model="llama3-8b-8192")
@@ -89,6 +84,17 @@ if selected_pdf != "None":
     vector_store.add_documents(documents=all_splits)
     st.sidebar.success(f"PDF '{selected_pdf}' processed and indexed!")
 
+# Delete a PDF
+st.sidebar.write("---")
+delete_pdf = st.sidebar.selectbox("Select a PDF to delete:", ["None"] + saved_pdfs)
+
+if delete_pdf != "None":
+    if st.sidebar.button("Delete Selected PDF"):
+        os.remove(os.path.join(PDF_STORAGE_DIR, delete_pdf))
+        st.sidebar.success(f"PDF '{delete_pdf}' deleted!")
+        # Refresh the list of PDFs
+        saved_pdfs = [f for f in os.listdir(PDF_STORAGE_DIR) if f.endswith(".pdf")]
+        
 # Q&A Section
 if "question_history" not in st.session_state:
     st.session_state.question_history = []
